@@ -2,7 +2,8 @@
 
 This Terraform project deploys a Nomad cluster with Consul on AWS.
 
-![image](https://github.com/user-attachments/assets/76d7652c-2025-4618-9097-26c8d54f4298)
+![image](https://github.com/user-attachments/assets/8b1f3a27-fbf7-4cc1-b743-edb9f75f0bea)
+
 
 Follow the steps below to set up and execute the project.
 ---
