@@ -34,14 +34,8 @@ Follow the steps below to set up and execute the project.
 ## Configuration
 
 1. **Key Pair Configuration**:
-   - Rename the key file in the root directory to `key-nomad.pem`, or update the `key_name` variable in the Terraform configuration:
-     ```hcl
-     variable "key_name" {
-       default = "your-key-name"
-     }
-     ```
    - Replace `"your-key-name"` with the name of your key pair created in AWS.
-
+     
 ---
 
 ## Steps to Deploy
