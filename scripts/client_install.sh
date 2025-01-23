@@ -17,12 +17,16 @@ yum -y install consul
 yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
 yum -y install nomad
 
+
+# Docker installation
 amazon-linux-extras enable docker
 yum install -y docker
 
+# Enable and start Docker
 systemctl enable docker
 systemctl start docker
 
+# Set permissions for the user
 usermod -G docker -a nomad
 
 # Create Consul configuration
