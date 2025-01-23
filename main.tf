@@ -111,7 +111,7 @@ resource "aws_security_group" "nomad_sg" {
 
 # Nomad Server Instance
 resource "aws_instance" "nomad_server" {
-  ami             = "ami-0ef0975ebdd78b77b" # Amazon Linux 2
+  ami             = "ami-0fa8eaa89da54d46b" # Amazon Linux 2
   instance_type   = "t2.micro"
   subnet_id       = aws_subnet.nomad_subnet.id
   security_groups = [aws_security_group.nomad_sg.id]
@@ -137,7 +137,7 @@ output "nomad_server_public_ip" {
 # Nomad Client Instance
 resource "aws_instance" "nomad_client" {
   count           = 2
-  ami             = "ami-0ef0975ebdd78b77b" # Amazon Linux 2
+  ami             = "ami-0fa8eaa89da54d46b" # Amazon Linux 2
   instance_type   = "t2.micro"
   subnet_id       = aws_subnet.nomad_subnet.id
   security_groups = [aws_security_group.nomad_sg.id]

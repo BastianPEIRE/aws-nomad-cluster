@@ -4,7 +4,7 @@ SERVER_IP=$1
 
 sudo mkdir -p /opt/alloc_mounts
 sudo chown -R nomad:nomad /opt/alloc_mounts
-sudo chmod -R 755 /opt/alloc_mounts
+chmod -R 755 /opt/alloc_mounts
 
 # Install utilities
 sudo yum install -y yum-utils shadow-utils
@@ -17,15 +17,25 @@ sudo yum -y install consul
 sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
 sudo yum -y install nomad
 
+sudo amazon-linux-extras enable docker
+sudo yum install -y docker
+
+sudo systemctl enable docker
+sudo systemctl start docker
+
+sudo usermod -G docker -a nomad
+
 # Create Consul configuration
 sudo mkdir -p /etc/consul.d
 cat <<EOF | sudo tee /etc/consul.d/consul.hcl
 datacenter = "dc1"
 data_dir = "/opt/consul"
 log_level = "INFO"
-node_name = "$(hostname)"
+node_name = "$(hostname -I | awk '{print $1}')"
 client_addr = "0.0.0.0"
 retry_join = ["$SERVER_IP"]
+bind_addr = "$(hostname -I | awk '{print $1}')"
+advertise_addr = "$(hostname -I | awk '{print $1}')"
 EOF
 
 sudo mkdir -p /opt/consul
@@ -47,6 +57,15 @@ client {
   enabled = true
   servers = ["$SERVER_IP"]
 }
+
+plugin "docker" {
+  config {
+    volumes {
+      enabled = true
+    }
+  }
+}
+
 EOF
 
 sudo mkdir -p /opt/nomad
