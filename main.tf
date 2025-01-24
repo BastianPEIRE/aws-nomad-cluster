@@ -56,15 +56,15 @@ resource "aws_security_group" "nomad_sg" {
   vpc_id = aws_vpc.nomad_vpc.id
 
   ingress {
-    from_port   = -1
-    to_port     = -1
+    from_port   = 0
+    to_port     = 65535
     protocol    = "icmp"
     cidr_blocks = ["10.0.0.0/16"] # Restrict to the private network
   }
 
   ingress {
-    from_port   = -1
-    to_port     = -1
+    from_port   = 0
+    to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["10.0.0.0/16"] # Restrict to the private network
   }
@@ -73,7 +73,7 @@ resource "aws_security_group" "nomad_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] # Allow all // Replace by your ip
   }
 
   egress {
@@ -117,7 +117,7 @@ output "nomad_server_public_ip" {
 resource "aws_instance" "nomad_client" {
   count           = 2
   ami             = "ami-0fa8eaa89da54d46b" # Amazon Linux 2
-  instance_type   = "t2.micro"
+  instance_type   = "t2.small"
   subnet_id       = aws_subnet.nomad_subnet.id
   security_groups = [aws_security_group.nomad_sg.id]
   key_name        = "key-nomad"
