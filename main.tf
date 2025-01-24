@@ -165,6 +165,7 @@ resource "aws_instance" "nomad_client" {
     sleep 30
     chmod +x /home/ec2-user/client_install.sh
     bash /home/ec2-user/client_install.sh ${aws_instance.nomad_server.private_ip}
+    rm /home/ec2-user/client_install.sh
     exit 0
   EOF
 }
