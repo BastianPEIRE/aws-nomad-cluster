@@ -56,8 +56,8 @@ resource "aws_security_group" "nomad_sg" {
   vpc_id = aws_vpc.nomad_vpc.id
 
   ingress {
-    from_port   = 0
-    to_port     = 65535
+    from_port   = -1
+    to_port     = -1
     protocol    = "icmp"
     cidr_blocks = ["10.0.0.0/16"] # Restrict to the private network
   }
