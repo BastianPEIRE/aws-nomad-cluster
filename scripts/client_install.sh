@@ -28,6 +28,56 @@ systemctl start docker
 
 # Set permissions for the user
 usermod -G docker -a nomad
+usermod -aG docker nomad
+
+# Install CNI plugin
+ARCH_CNI=$( [ "$(uname -m)" = "aarch64" ] && echo "arm64" || echo "amd64" )
+CNI_PLUGIN_VERSION="v1.6.2"
+
+CNI_URL="https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGIN_VERSION}/cni-plugins-linux-${ARCH_CNI}-${CNI_PLUGIN_VERSION}.tgz"
+curl -L -o cni-plugins.tgz "$CNI_URL"
+
+mkdir -p /opt/cni/bin
+tar -C /opt/cni/bin -xzf cni-plugins.tgz
+
+# Set the tunable parameters to allow iptables processing for the bridge network.
+echo 1 > /proc/sys/net/bridge/bridge-nf-call-arptables
+echo 1 > /proc/sys/net/bridge/bridge-nf-call-ip6tables
+echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
+
+cat <<EOF | tee /etc/sysctl.d/bridge.conf
+net.bridge.bridge-nf-call-arptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+# CNI Create CNI configuration
+cat <<EOF | tee /etc/cni/net.d/network-1.conf
+{
+  "cniVersion": "0.4.0",
+  "name": "nomad-bridge",
+  "type": "bridge",
+  "bridge": "nomad0",
+  "isGateway": true,
+  "ipMasq": true,
+  "ipam": {
+    "type": "host-local",
+    "ranges": [
+      [
+        {
+          "subnet": "10.0.0.0/16",
+          "rangeStart": "10.0.1.1",
+          "rangeEnd": "10.0.255.254",
+          "gateway": "10.0.0.1"
+        }
+      ]
+    ],
+    "routes": [
+      { "dst": "0.0.0.0/0" }
+    ]
+  }
+}
+EOF
 
 # Create Consul configuration
 mkdir -p /etc/consul.d
@@ -60,10 +110,14 @@ advertise {
 client {
   enabled = true
   servers = ["$SERVER_IP"]
+  cni_path = "/opt/cni/bin"
+  cni_config_dir = "/etc/cni/net.d"
 }
 
 plugin "docker" {
   config {
+    allow_privileged = true
+    allow_caps       = ["audit_write", "chown", "dac_override", "fowner", "fsetid", "kill", "mknod", "net_bind_service", "setfcap", "setgid", "setpcap", "setuid", "sys_chroot", "net_admin"]
     volumes {
       enabled = true
     }
@@ -75,10 +129,15 @@ EOF
 mkdir -p /opt/nomad
 
 # Set permissions for the configuration files
+chown -R nomad:nomad /etc/cni/
+chmod 750 /etc/cni/net.d
+chmod -R 755 /etc/cni/net.d/
 chmod 640 /etc/consul.d/consul.hcl
 chmod 640 /etc/nomad.d/nomad.hcl
 chown -R nomad:nomad /opt/nomad
+chmod +x /opt/cni/bin/*
 chmod +x /usr/bin/nomad
+setcap cap_net_admin+ep /usr/bin/nomad
 
 # Create systemd service file for Consul (Client Mode)
 cat <<EOF | tee /etc/systemd/system/consul.service
@@ -114,13 +173,16 @@ ExecStart=/usr/bin/nomad agent -config=/etc/nomad.d
 ExecReload=/bin/kill -HUP \$MAINPID
 KillSignal=SIGINT
 Restart=on-failure
-User=nomad
-Group=nomad
+User=root
+Group=root
 LimitNOFILE=65536
 
 [Install]
 WantedBy=multi-user.target
 EOF
+
+
+setcap cap_net_admin+ep /usr/bin/nomad
 
 # Reload systemd to recognize the new services
 systemctl daemon-reload

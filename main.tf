@@ -121,8 +121,8 @@ resource "aws_instance" "nomad_client" {
   subnet_id       = aws_subnet.nomad_subnet.id
   security_groups = [aws_security_group.nomad_sg.id]
   key_name        = "key-nomad"
-  depends_on = [aws_instance.nomad_server]
-  
+  depends_on      = [aws_instance.nomad_server]
+
   tags = {
     Name = "nomad-client"
   }
@@ -131,7 +131,7 @@ resource "aws_instance" "nomad_client" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("./key-nomad.pem") 
+      private_key = file("./key-nomad.pem")
       host        = self.public_ip
     }
 
@@ -147,4 +147,9 @@ resource "aws_instance" "nomad_client" {
     rm /home/ec2-user/client_install.sh
     exit 0
   EOF
+}
+
+
+output "nomad_client_public_ip-0" {
+  value = aws_instance.nomad_client[0].public_ip
 }
